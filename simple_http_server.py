@@ -8,11 +8,17 @@ SERVER_HOST = '127.0.0.1'
 SERVER_PORT = 8888
 
 
-class Server:
+class SimpleServer:
     """
     Implementation of a simple HTTP/1.0 Server using TCP socket programming.
     The server accepts any type of client requests and responds with a hello
     world text.
+
+        Limitations:
+        1) The server is not capable of handling concurrent client requests.
+        2) It needs to be ensured that all client request data is received
+           to handle the cases where request data is greater than receive
+           buffer size.
 
         Phases of HTTP message exchange over TCP:
 
@@ -62,7 +68,7 @@ class Server:
 
 
 if __name__ == "__main__":
-    server = Server(SERVER_HOST, SERVER_PORT)
+    server = SimpleServer(SERVER_HOST, SERVER_PORT)
     try:
         while True:
             connection, client_address = server.accept_any_request()
