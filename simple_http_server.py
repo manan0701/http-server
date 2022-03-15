@@ -76,6 +76,7 @@ if __name__ == "__main__":
             with connection:
                 # 1024 is the buffer size in bytes
                 request_data = connection.recv(1024)
+                # avoid the issue of byte ordering
                 # request_data.decode('utf-8')
 
                 # status code and content must be separated by blank lines
