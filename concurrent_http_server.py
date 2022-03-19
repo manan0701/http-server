@@ -1,22 +1,32 @@
+import errno
+import os
+import signal
 import socket
 import sys
 
 # Standard loop-back interface address
+import time
+
 SERVER_HOST = '127.0.0.1'
 
 # Non-privileged ports are > 1023
 SERVER_PORT = 8888
 
+SERVER_ADDRESS = (SERVER_HOST, SERVER_PORT) = SERVER_HOST, SERVER_PORT
+REQUEST_QUEUE_LIMIT = 1024
 
-class SimpleServer:
+
+class ConcurrentServer:
     """
-    Implementation of a simple HTTP/1.0 Server using TCP socket programming.
+    Implementation of a concurrent HTTP/1.0 Server using TCP socket programming.
     The server accepts any type of client requests and responds with a hello
     world text.
 
+    It is capable of serving multiple client requests concurrently and ensures
+    that no zombie processes are created while spawning and handling child processes.
+
         Limitations:
-        1) The server is not capable of handling concurrent client requests.
-        2) It needs to be ensured that all client request data is received
+        1) It needs to be ensured that all client request data is received
            to handle the cases where request data is greater than receive
            buffer size.
 
@@ -34,15 +44,21 @@ class SimpleServer:
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             # Enable address re-usability
             self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            self.socket.bind((host, port))
+            self.socket.bind(SERVER_ADDRESS)
         except socket.error:
             print(f'Error creating server socket', file=sys.stderr)
             raise
 
+    def __register_sigchld_signal(self):
+        signal.signal(signal.SIGCHLD, self.__wait_for_children)
+
     def __make_listening_socket(self):
         # 1 is the max length of the pending connections queue (backlog)
-        self.socket.listen(1)
+        self.socket.listen(REQUEST_QUEUE_LIMIT)
         print(f'Server listening at: http://{SERVER_HOST}:{SERVER_PORT}')
+
+    def __wait_for_children(self):
+        os.wait()
 
     def accept_any_request(self) -> tuple[socket, tuple[str, str]]:
         """
@@ -58,7 +74,19 @@ class SimpleServer:
 
         return self.socket.accept()
 
-    def close_server_socket(self):
+    def handle_request(self, client_connection: socket):
+        # 1024 is the buffer size in bytes
+        request_data = client_connection.recv(1024)
+        # avoid the issue of byte ordering
+        # request_data.decode('utf-8')
+
+        # status code and content must be separated by blank lines
+        response = 'HTTP/1.0 200 OK\n\nHello World!'
+        client_connection.sendall(response.encode())
+        print('sleeping')
+        time.sleep(60)
+
+    def close_socket(self):
         if not hasattr(self, 'socket') or not self.socket:
             return
 
@@ -66,23 +94,33 @@ class SimpleServer:
 
 
 if __name__ == "__main__":
-    server = SimpleServer(SERVER_HOST, SERVER_PORT)
+    server = ConcurrentServer(SERVER_HOST, SERVER_PORT)
+
     try:
         while True:
-            connection, client_address = server.accept_any_request()
-            print(f'Connected by {client_address}')
+            try:
+                connection, client_address = server.accept_any_request()
+                print(f'Connected by {client_address}')
+            except IOError as e:
+                code, message = e.args
+                if code == errno.EINTR:
+                    continue
+                raise
 
-            with connection:
-                # 1024 is the buffer size in bytes
-                request_data = connection.recv(1024)
-                # avoid the issue of byte ordering
-                # request_data.decode('utf-8')
+            pid = os.fork()
 
-                # status code and content must be separated by blank lines
-                response = 'HTTP/1.0 200 OK\n\nHello World!'
-                connection.sendall(response.encode())
+            if pid == 0:
+                server.close_socket()
+
+                with connection:
+                    server.handle_request(connection)
+
+                os._exit(os.EX_OK)
+            else:
+                connection.close()
+
     except Exception:
         print(f'Server encountered an error.', file=sys.stderr)
         raise
     finally:
-        server.close_server_socket()
+        server.close_socket()
