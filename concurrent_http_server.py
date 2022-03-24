@@ -7,14 +7,6 @@ import sys
 # Standard loop-back interface address
 import time
 
-SERVER_HOST = '127.0.0.1'
-
-# Non-privileged ports are > 1023
-SERVER_PORT = 8888
-
-SERVER_ADDRESS = (SERVER_HOST, SERVER_PORT) = SERVER_HOST, SERVER_PORT
-REQUEST_QUEUE_LIMIT = 1024
-
 
 class ConcurrentServer:
     """
@@ -35,16 +27,20 @@ class ConcurrentServer:
     """
 
     def __init__(self, host: str, port: int):
+        self.HOST = host
+        self.PORT = port
+        self.REQUEST_QUEUE_LIMIT = 1024
+
         self.__create_socket(host, port)
         self.__make_listening_socket()
 
-    def __create_socket(self, host: str, port: int) -> socket:
+    def __create_socket(self) -> socket:
         try:
             # AF_INET - IPv4 address family, SOCK_STREAM - TCP (connection-based)
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             # Enable address re-usability
             self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            self.socket.bind(SERVER_ADDRESS)
+            self.socket.bind((self.HOST, self.PORT))
         except socket.error:
             print(f'Error creating server socket', file=sys.stderr)
             raise
@@ -54,8 +50,8 @@ class ConcurrentServer:
 
     def __make_listening_socket(self):
         # 1 is the max length of the pending connections queue (backlog)
-        self.socket.listen(REQUEST_QUEUE_LIMIT)
-        print(f'Server listening at: http://{SERVER_HOST}:{SERVER_PORT}')
+        self.socket.listen(self.REQUEST_QUEUE_LIMIT)
+        print(f'Server listening at: http://{self.HOST}:{self.PORT}')
 
     def __wait_for_children(self):
         os.wait()
@@ -70,7 +66,8 @@ class ConcurrentServer:
         """
 
         if not hasattr(self, 'socket') or not self.socket:
-            raise TypeError('\'NoneType\' server socket found. Cannot accept requests.')
+            raise TypeError(
+                '\'NoneType\' server socket found. Cannot accept requests.')
 
         return self.socket.accept()
 
@@ -94,6 +91,11 @@ class ConcurrentServer:
 
 
 if __name__ == "__main__":
+
+    SERVER_HOST = '127.0.0.1'
+    # Non-privileged ports are > 1023
+    SERVER_PORT = 8888
+
     server = ConcurrentServer(SERVER_HOST, SERVER_PORT)
 
     try:
