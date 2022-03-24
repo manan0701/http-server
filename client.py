@@ -1,3 +1,5 @@
+import argparse
+import os
 import socket
 
 HOST = '127.0.0.1'
@@ -15,10 +17,31 @@ class Client:
     """
 
     def __init__(self):
-        max_clients = 3
-        max_conns = 3
+        self.__initialize_args()
+        self.__send_requests()
 
-        for client_num in range(1, max_clients + 1):
+    def __initialize_args(self):
+        parser = argparse.ArgumentParser()
+
+        parser.add_argument(
+            '--max-conns',
+            type=int,
+            default=1,
+            help='Maximum number of connections per client.'
+        )
+
+        parser.add_argument(
+            '--max-clients',
+            type=int,
+            default=1,
+            help='Maximum number of clients.'
+        )
+
+        self.args = parser.parse_args()
+
+    def __send_requests(self):
+
+        for client_num in range(1, self.args.max_clients + 1):
             pid = os.fork()
 
             if pid != 0:
@@ -26,7 +49,7 @@ class Client:
 
             print(f'Client: {client_num}')
 
-            for connection_num in range(1, max_conns + 1):
+            for connection_num in range(1, self.args.max_conns + 1):
                 # AF_INET - IPv4 address family, SOCK_STREAM - TCP (connection-based)
                 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client_socket:
                     client_socket.connect((HOST, PORT))
