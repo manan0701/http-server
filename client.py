@@ -12,6 +12,9 @@ class Client:
     can establish multiple client connections and send simple message
     to the standard loop-back interface address.
 
+    Usage: `python3 client.py --max-clients=<int> --max-conns=<int>`
+    Default values: max-clients = 1, max-conns = 1
+
     Phases of HTTP message exchange over TCP by the client:
         Client: socket -> connect -> send -> recv -> close
     """
