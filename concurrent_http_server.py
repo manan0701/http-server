@@ -14,13 +14,13 @@ class ConcurrentServer:
     It is capable of serving multiple client requests concurrently and ensures
     that no zombie processes are created while spawning and handling child processes.
 
-        Limitations:
-        1) It needs to be ensured that all client request data is received
-           to handle the cases where request data is greater than receive
-           buffer size.
+    Limitations:
+    1) It needs to be ensured that all client request data is received
+        to handle the cases where request data is greater than receive
+        buffer size.
 
-        Phases of HTTP message exchange over TCP by the server:
-            Server: socket -> bind -> listen -> accept -> recv -> send -> recv -> close
+    Phases of HTTP message exchange over TCP by the server:
+        Server: socket -> bind -> listen -> accept -> recv -> send -> recv -> close
     """
 
     def __init__(self, host: str, port: int):
@@ -76,7 +76,7 @@ class ConcurrentServer:
 
         :return: Client connection socket and the connected client information.
 
-        :raises TypeError: When the server socket cannot be found.
+        :raises `TypeError`: When the server socket cannot be found.
         """
 
         if not hasattr(self, 'socket') or not self.socket:
@@ -126,6 +126,8 @@ if __name__ == "__main__":
             pid = os.fork()
 
             if pid == 0:
+                # close child copy
+                # this ensures correct descriptor reference count
                 server.close_socket()
 
                 with connection:
@@ -133,6 +135,7 @@ if __name__ == "__main__":
 
                 os._exit(os.EX_OK)
             else:
+                # close parent copy
                 connection.close()
 
     except Exception:

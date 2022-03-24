@@ -9,7 +9,7 @@ PORT = 8888
 class Client:
     """
     Implementation of a client using TCP socket programming that
-    can establish multiple client connections and send simple message
+    can establish multiple client connections and send messages
     to the standard loop-back interface address.
 
     Usage: `python3 client.py --max-clients=<int> --max-conns=<int>`
