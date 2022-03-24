@@ -33,6 +33,7 @@ class ConcurrentServer:
 
         self.__create_socket(host, port)
         self.__make_listening_socket()
+        self.__register_sigchld_signal()
 
     def __create_socket(self) -> socket:
         try:
@@ -80,8 +81,6 @@ class ConcurrentServer:
         # status code and content must be separated by blank lines
         response = 'HTTP/1.0 200 OK\n\nHello World!'
         client_connection.sendall(response.encode())
-        print('sleeping')
-        time.sleep(60)
 
     def close_socket(self):
         if not hasattr(self, 'socket') or not self.socket:
@@ -105,6 +104,7 @@ if __name__ == "__main__":
                 print(f'Connected by {client_address}')
             except IOError as e:
                 code, message = e.args
+                # retry accept if it was interrupted
                 if code == errno.EINTR:
                     continue
                 raise
