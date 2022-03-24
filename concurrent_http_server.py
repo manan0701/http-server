@@ -55,7 +55,17 @@ class ConcurrentServer:
         print(f'Server listening at: http://{self.HOST}:{self.PORT}')
 
     def __wait_for_children(self):
-        os.wait()
+        # wait for all child processes to prevent zombies
+        while True:
+            try:
+                # -1: wait for termination of any child process
+                # os.WNOHANG: returns (0, 0) when no child process status is available
+                pid, status = os.waitpid(-1, os.WNOHANG)
+
+                if pid == 0 and status == 0:
+                    return
+            except OSError:
+                return
 
     def accept_any_request(self) -> tuple[socket, tuple[str, str]]:
         """
