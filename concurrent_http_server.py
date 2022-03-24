@@ -4,9 +4,6 @@ import signal
 import socket
 import sys
 
-# Standard loop-back interface address
-import time
-
 
 class ConcurrentServer:
     """
@@ -31,9 +28,9 @@ class ConcurrentServer:
         self.PORT = port
         self.REQUEST_QUEUE_LIMIT = 1024
 
-        self.__create_socket(host, port)
+        self.__create_socket()
         self.__make_listening_socket()
-        self.__register_sigchld_signal()
+        self.__register_signal_handlers()
 
     def __create_socket(self) -> socket:
         try:
@@ -46,15 +43,11 @@ class ConcurrentServer:
             print(f'Error creating server socket', file=sys.stderr)
             raise
 
-    def __register_sigchld_signal(self):
-        signal.signal(signal.SIGCHLD, self.__wait_for_children)
+    def __sigtstp_signal_handler(self, signum, frame):
+        self.close_socket()
+        sys.exit(0)
 
-    def __make_listening_socket(self):
-        # 1 is the max length of the pending connections queue (backlog)
-        self.socket.listen(self.REQUEST_QUEUE_LIMIT)
-        print(f'Server listening at: http://{self.HOST}:{self.PORT}')
-
-    def __wait_for_children(self):
+    def __sigchld_signal_handler(self, signum, frame):
         # wait for all child processes to prevent zombies
         while True:
             try:
@@ -66,6 +59,16 @@ class ConcurrentServer:
                     return
             except OSError:
                 return
+
+    def __register_signal_handlers(self):
+        signal.signal(signal.SIGCHLD, self.__sigchld_signal_handler)
+        # close socket if process is suspended
+        signal.signal(signal.SIGTSTP, self.__sigtstp_signal_handler)
+
+    def __make_listening_socket(self):
+        # 1 is the max length of the pending connections queue (backlog)
+        self.socket.listen(self.REQUEST_QUEUE_LIMIT)
+        print(f'Server listening at: http://{self.HOST}:{self.PORT}')
 
     def accept_any_request(self) -> tuple[socket, tuple[str, str]]:
         """
@@ -101,6 +104,7 @@ class ConcurrentServer:
 
 if __name__ == "__main__":
 
+    # Standard loop-back interface address
     SERVER_HOST = '127.0.0.1'
     # Non-privileged ports are > 1023
     SERVER_PORT = 8888
