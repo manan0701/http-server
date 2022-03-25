@@ -61,6 +61,8 @@ class Client:
                 for key, mask in ready_events:
                     connection = key.fileobj
                     self.__handle_socket_ready_event(key, mask)
+        except KeyboardInterrupt:
+            pass
         except:
             raise
         finally:
