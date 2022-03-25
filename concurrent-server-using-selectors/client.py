@@ -1,17 +1,17 @@
 import argparse
-from msilib.schema import Error
 import selectors
 import socket
 
 
 class Client:
     """
-    Implementation of a client using TCP socket programming that
-    can establish multiple client connections and send messages
-    to the standard loop-back interface address.
+    Implementation of a client using TCP socket programming and
+    python `selectors` module that can establish multiple client
+    connections and send messages to the standard loop-back
+    interface address.
 
-    Usage: `python3 client.py --max-clients=<int> --max-conns=<int>`
-    Default values: max-clients = 1, max-conns = 1
+    Usage: `python3 client.py --max-conns=<int>`
+    max-conns = Maximum client connections to the server (default = 1)
 
     Phases of HTTP message exchange over TCP by the client:
         Client: socket -> connect -> send -> recv -> close
@@ -21,7 +21,7 @@ class Client:
         self.HOST = server_host
         self.PORT = server_port
         self.max_connections = max_connections
-        self.messages_to_send = [b'Message 1', b'Message 2']
+        self.messages_to_send = ['Message 1', 'Message 2']
         self.selector = selectors.DefaultSelector()
 
     def __handle_socket_ready_event(self, key: selectors.SelectorKey, mask: int):
@@ -42,7 +42,7 @@ class Client:
 
             if not data.get_output_buffer() and data.get_request_data():
                 data.set_output_buffer(
-                    data.get_request_data().pop(0))
+                    data.get_request_data().pop(0).encode())
 
             if data.get_output_buffer():
                 buffer = data.get_output_buffer()
@@ -69,6 +69,10 @@ class Client:
                 connection.close()
 
     def send_requests(self):
+        """
+        Initiates client connections equal to the maximum connections parameter.
+        All messages are sent sequentially through the connection request.
+        """
 
         for connection_num in range(1, self.max_connections + 1):
             print(f'Connection {connection_num} to {self.HOST}:{self.PORT}')
@@ -85,6 +89,10 @@ class Client:
         self.__process_ready_socket_events()
 
     class RequestPayload:
+        """
+        Helper class to wrap the request data and output
+        buffer for a client connection processing.
+        """
         __request_data = b''
         __output_buffer = b''
 
@@ -116,6 +124,7 @@ if __name__ == "__main__":
     )
 
     max_conns = parser.parse_args().max_conns
+    max_conns = max_conns if max_conns > 0 else 1
 
     client = Client(server_host='127.0.0.1', server_port=8888,
                     max_connections=max_conns)
