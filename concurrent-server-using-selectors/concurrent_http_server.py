@@ -5,17 +5,11 @@ import sys
 
 class ConcurrentServer:
     """
-    Implementation of a concurrent HTTP/1.0 Server using TCP socket programming.
-    The server accepts any type of client requests and responds with a hello
-    world text.
-
-    It is capable of serving multiple client requests concurrently and ensures
-    that no zombie processes are created while spawning and handling child processes.
-
-    Limitations:
-    1) It needs to be ensured that all client request data is received
-        to handle the cases where request data is greater than receive
-        buffer size.
+    Implementation of a concurrent HTTP/1.0 Server using TCP socket programming and
+    python `selectors` module. The server accepts any type of client requests and
+    responds with the same message received in the request. The server is capable
+    of receiving all the data sent by the client handling the scenarios where request
+    data is greater than receive buffer.
 
     Phases of HTTP message exchange over TCP by the server:
         Server: socket -> bind -> listen -> accept -> recv -> send -> recv -> close
@@ -80,6 +74,7 @@ class ConcurrentServer:
                 client_socket.close()
 
         if event_mask & selectors.EVENT_WRITE:
+            # request message is echoed back in the response
             request_data = data.get_request_data()
 
             if request_data:
@@ -87,6 +82,13 @@ class ConcurrentServer:
                 data.set_request_data(request_data[bytes_sent:])
 
     def service_requests(self):
+        """
+        Starts looking for ready socket events and handle them.
+        When the server socket is ready, it starts accepting
+        client requests. When a client connection socket
+        is ready for either read or write events, data is received
+        or sent using the socket.
+        """
         try:
             while True:
                 ready_events = self.selector.select()
@@ -103,6 +105,9 @@ class ConcurrentServer:
             self.close_socket()
 
     def close_socket(self):
+        """
+        Closes the server socket.
+        """
         if not hasattr(self, 'socket') or not self.socket:
             return
 
@@ -110,9 +115,12 @@ class ConcurrentServer:
         self.socket.close()
 
     class RequestPayload:
+        """
+        Helper class to wrap the client address, request data and output
+        buffer for a client connection processing.
+        """
         __client_address = ''
         __request_data = b''
-        __response_data = b''
 
         def __init__(self, client_address: str):
             self.__client_address = client_address
@@ -131,12 +139,6 @@ class ConcurrentServer:
 
         def append_to_request_data(self, data: bytes):
             self.__request_data += data
-
-        def get_response_data(self) -> bytes:
-            return self.__response_data
-
-        def set_response_data(self, new_data: bytes):
-            self.__response_data = new_data
 
 
 if __name__ == "__main__":
