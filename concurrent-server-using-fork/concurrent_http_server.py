@@ -32,7 +32,7 @@ class ConcurrentServer:
         self.__make_listening_socket()
         self.__register_signal_handlers()
 
-    def __create_socket(self) -> socket:
+    def __create_socket(self):
         try:
             # AF_INET - IPv4 address family, SOCK_STREAM - TCP (connection-based)
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
