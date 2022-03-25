@@ -112,6 +112,8 @@ class ConcurrentServer:
             return
 
         print('Stopping the server')
+        self.selector.unregister(self.socket)
+        self.selector.close()
         self.socket.close()
 
     class RequestPayload:

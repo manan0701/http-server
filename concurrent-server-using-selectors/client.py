@@ -66,6 +66,7 @@ class Client:
         finally:
             if connection:
                 self.selector.unregister(connection)
+                self.selector.close()
                 connection.close()
 
     def send_requests(self):
