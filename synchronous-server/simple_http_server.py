@@ -10,7 +10,7 @@ SERVER_PORT = 8888
 
 class SimpleServer:
     """
-    Implementation of a simple HTTP/1.0 Server using TCP socket programming.
+    Implementation of a simple HTTP/2.0 Server using TCP socket programming.
     The server accepts any type of client requests and responds with a hello
     world text.
 
@@ -54,7 +54,8 @@ class SimpleServer:
         """
 
         if not hasattr(self, 'socket') or not self.socket:
-            raise TypeError('\'NoneType\' server socket found. Cannot accept requests.')
+            raise TypeError(
+                '\'NoneType\' server socket found. Cannot accept requests.')
 
         return self.socket.accept()
 
@@ -79,7 +80,7 @@ if __name__ == "__main__":
                 # request_data.decode('utf-8')
 
                 # status code and content must be separated by blank lines
-                response = 'HTTP/1.0 200 OK\n\nHello World!'
+                response = 'HTTP/2.0 200 OK\n\nHello World!'
                 connection.sendall(response.encode())
     except Exception:
         print(f'Server encountered an error.', file=sys.stderr)
