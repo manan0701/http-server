@@ -10,7 +10,7 @@ SERVER_PORT = 8888
 
 class SimpleServer:
     """
-    Implementation of a simple HTTP/2.0 Server using TCP socket programming.
+    Implementation of a simple HTTP Server using TCP socket programming.
     The server accepts any type of client requests and responds with a hello
     world text.
 

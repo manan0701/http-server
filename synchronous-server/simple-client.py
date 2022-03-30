@@ -8,6 +8,7 @@ class Client:
     """
     Implementation of a simple client using TCP socket programming that
     sends a simple message to the standard loop-back interface address.
+
     Phases of HTTP message exchange over TCP by the client:
         Client: socket -> connect -> send -> recv -> close
     """

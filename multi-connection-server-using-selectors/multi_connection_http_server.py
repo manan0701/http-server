@@ -5,11 +5,16 @@ import sys
 
 class ConcurrentServer:
     """
-    Implementation of a concurrent HTTP/1.0 Server using TCP socket programming and
-    python `selectors` module. The server accepts any type of client requests and
-    responds with the same message received in the request. The server is capable
-    of receiving all the data sent by the client handling the scenarios where request
-    data is greater than receive buffer.
+    Implementation of a HTTP Server using TCP socket programming and python's `selectors`
+    module that is able to handle multiple client connections. The server accepts any type
+    of client requests and responds with the same message received in the request.
+
+    The server is capable of receiving all the data sent by the client handling the scenarios 
+    where request data is greater than receive buffer. This, it is able to call `send()` and `recv()`
+    as many times as needed.
+
+    Limitations:
+        1) The server is not capable of handling concurrent client requests.
 
     Phases of HTTP message exchange over TCP by the server:
         Server: socket -> bind -> listen -> accept -> recv -> send -> recv -> close

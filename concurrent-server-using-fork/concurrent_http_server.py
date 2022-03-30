@@ -7,7 +7,7 @@ import sys
 
 class ConcurrentServer:
     """
-    Implementation of a concurrent HTTP/1.0 Server using TCP socket programming.
+    Implementation of a concurrent HTTP Server using TCP socket programming.
     The server accepts any type of client requests and responds with a hello
     world text.
 
